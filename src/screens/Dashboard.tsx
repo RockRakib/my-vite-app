@@ -1,21 +1,10 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import {
-    TrendingUp,
-    BarChart3,
-    ArrowUpRight,
-    ArrowDownRight,
-    ChevronRight,
-    Flame,
-} from "lucide-react";
+import { ChevronRight, Flame } from "lucide-react";
 import type { Trade } from "../types";
 import {
     getWinRate,
     getCurrentStreak,
-    getTotalTrades,
-    getBestStrategy,
-    getAverageWinner,
-    getAverageLoser,
     getEquityCurve,
     getTodayTrades,
     deleteTrade,
@@ -41,9 +30,7 @@ export default function Dashboard({
     const streak = getCurrentStreak();
     const todayTrades = getTodayTrades();
     const equityCurve = getEquityCurve();
-    const bestStrategy = getBestStrategy();
-    const avgWinner = getAverageWinner();
-    const avgLoser = getAverageLoser();
+    // removed quick stats per UI request
 
     // Filter equity curve based on time range
     const filteredCurve = useMemo(() => {
@@ -426,80 +413,7 @@ export default function Dashboard({
                 )}
             </div>
 
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-2">
-                {[
-                    {
-                        icon: TrendingUp,
-                        label: "Best Strategy",
-                        value: bestStrategy.name,
-                        sub: `+$${bestStrategy.pnl} total`,
-                    },
-                    {
-                        icon: BarChart3,
-                        label: "Total Trades",
-                        value: String(getTotalTrades()),
-                        sub: "This month",
-                    },
-                    {
-                        icon: ArrowUpRight,
-                        label: "Avg Winner",
-                        value: `+$${avgWinner}`,
-                        sub: "R:R 1.8",
-                        color: "#10B981",
-                    },
-                    {
-                        icon: ArrowDownRight,
-                        label: "Avg Loser",
-                        value: `-$${Math.abs(avgLoser)}`,
-                        sub: "R:R 0.9",
-                        color: "#EF4444",
-                    },
-                ].map((s, i) => (
-                    <motion.div
-                        key={s.label}
-                        className="flex flex-col"
-                        style={{
-                            height: 110,
-                            background: "rgba(20, 24, 28, 0.72)",
-                            backdropFilter: "blur(20px)",
-                            border: "1px solid rgba(255, 255, 255, 0.06)",
-                            borderRadius: 12,
-                            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.35)",
-                            padding: 14,
-                        }}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{
-                            delay: 0.4 + i * 0.1,
-                            type: "spring",
-                            stiffness: 200,
-                            damping: 20,
-                        }}
-                    >
-                        <s.icon size={20} color="#4A5568" />
-                        <div
-                            style={{
-                                fontWeight: 700,
-                                fontSize: 20,
-                                color: s.color || "#F0F2F5",
-                                marginTop: 8,
-                            }}
-                        >
-                            {s.value}
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 11,
-                                color: "#4A5568",
-                                marginTop: 2,
-                            }}
-                        >
-                            {s.sub}
-                        </div>
-                    </motion.div>
-                ))}
-            </div>
+            {/* Quick Stats Grid removed per request — keep Today's Trades only */}
 
             {/* Trade Detail Sheet */}
             <TradeDetailSheet

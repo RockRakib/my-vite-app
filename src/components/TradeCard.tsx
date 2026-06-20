@@ -8,7 +8,7 @@ interface Props {
     compact?: boolean;
 }
 
-export default function ({ trade, onTap, compact = false }: Props) {
+export default function TradeCard({ trade, onTap, compact = false }: Props) {
     const isWin = trade.profitLoss > 0;
     const time = new Date(trade.timestamp).toLocaleTimeString("en-US", {
         hour: "2-digit",
@@ -175,22 +175,40 @@ export default function ({ trade, onTap, compact = false }: Props) {
                 </div>
             </div>
 
-            {/* Right */}
-            <div className="text-right">
+            {/* Right - Screenshot */}
+            {trade.screenshots && trade.screenshots.length > 0 ? (
                 <div
                     style={{
-                        fontWeight: 700,
-                        fontSize: 16,
-                        color: isWin ? "#10B981" : "#EF4444",
+                        width: 60,
+                        height: 48,
+                        borderRadius: 8,
+                        overflow: "hidden",
+                        flexShrink: 0,
+                        border: "1px solid rgba(255, 255, 255, 0.06)",
                     }}
                 >
-                    {isWin ? "+" : ""}${trade.profitLoss}
+                    <img
+                        src={trade.screenshots[0]}
+                        alt="chart"
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                        }}
+                    />
                 </div>
-                <div style={{ fontSize: 10, color: "#4A5568", marginTop: 2 }}>
-                    {isWin ? "+" : ""}
-                    {trade.pips} pips
-                </div>
-            </div>
+            ) : (
+                <div
+                    style={{
+                        width: 60,
+                        height: 48,
+                        borderRadius: 8,
+                        background: "rgba(255, 255, 255, 0.04)",
+                        flexShrink: 0,
+                        border: "1px solid rgba(255, 255, 255, 0.06)",
+                    }}
+                />
+            )}
         </motion.div>
     );
 }

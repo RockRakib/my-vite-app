@@ -29,6 +29,7 @@ export default function AddTrade({
         "POC",
         "JOKER",
     ];
+    const CONFIRMATION_OPTIONS = ["CX", "M1", "TCP", "MINOR"];
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [pair, setPair] = useState(initialTrade?.pair ?? "");
@@ -48,6 +49,9 @@ export default function AddTrade({
         initialTrade?.takeProfit ? String(initialTrade.takeProfit) : "",
     );
     const [strategy, setStrategy] = useState(initialTrade?.strategy ?? "");
+    const [confirmation, setConfirmation] = useState(
+        initialTrade?.confirmation ?? "",
+    );
     const [timeframe, setTimeframe] = useState(initialTrade?.timeframe ?? "H1");
     const [session, setSession] = useState(initialTrade?.session ?? "London");
     const [setupQuality, setSetupQuality] = useState<1 | 2 | 3 | 4 | 5>(
@@ -67,6 +71,8 @@ export default function AddTrade({
         (initialTrade?.exitType as "tp" | "sl" | "be" | "manual") ?? "manual",
     );
     const [showStrategyDropdown, setShowStrategyDropdown] = useState(false);
+    const [showConfirmationDropdown, setShowConfirmationDropdown] =
+        useState(false);
     const [showSessionDropdown, setShowSessionDropdown] = useState(false);
     const [showExitTypeDropdown, setShowExitTypeDropdown] = useState(false);
 
@@ -147,6 +153,7 @@ export default function AddTrade({
             profitLoss: pnl,
             commission: 2,
             strategy: strategy || "Manual",
+            confirmation: confirmation || "",
             timeframe,
             session,
             setupQuality,
@@ -182,6 +189,7 @@ export default function AddTrade({
         setStopLoss("");
         setTakeProfit("");
         setStrategy("");
+        setConfirmation("");
         setSetupQuality(3);
         setEmotions([]);
         setMistakes([]);
@@ -450,6 +458,69 @@ export default function AddTrade({
                                 }}
                             >
                                 {s}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Confirmation */}
+            <div style={{ marginBottom: 16, position: "relative" }}>
+                <label style={labelStyle}>Confirmation</label>
+                <button
+                    className="flex items-center justify-between"
+                    style={{ ...inputStyle, textAlign: "left" }}
+                    onClick={() =>
+                        setShowConfirmationDropdown(!showConfirmationDropdown)
+                    }
+                >
+                    <span
+                        style={{
+                            color: confirmation ? "#F0F2F5" : "#4A5568",
+                        }}
+                    >
+                        {confirmation || "Select confirmation..."}
+                    </span>
+                    <ChevronDown size={16} color="#4A5568" />
+                </button>
+                {showConfirmationDropdown && (
+                    <div
+                        className="absolute left-0 right-0 z-10"
+                        style={{
+                            top: "calc(100% + 4px)",
+                            background: "rgba(30, 36, 42, 0.95)",
+                            backdropFilter: "blur(20px)",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderRadius: 10,
+                            maxHeight: 200,
+                            overflow: "auto",
+                        }}
+                    >
+                        {CONFIRMATION_OPTIONS.map((option) => (
+                            <button
+                                key={option}
+                                className="w-full text-left"
+                                style={{
+                                    padding: "12px 14px",
+                                    fontSize: 14,
+                                    color:
+                                        confirmation === option
+                                            ? "#2DD4A8"
+                                            : "#F0F2F5",
+                                    background:
+                                        confirmation === option
+                                            ? "rgba(45, 212, 168, 0.08)"
+                                            : "transparent",
+                                    borderBottom:
+                                        "1px solid rgba(255, 255, 255, 0.03)",
+                                }}
+                                onClick={() => {
+                                    haptic();
+                                    setConfirmation(option);
+                                    setShowConfirmationDropdown(false);
+                                }}
+                            >
+                                {option}
                             </button>
                         ))}
                     </div>

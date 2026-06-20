@@ -108,13 +108,6 @@ export default function App() {
                                     onEditTrade={handleEditTrade}
                                 />
                             )}
-                            {activeTab === "dashboard" && (
-                                <Dashboard
-                                    onNavigate={handleNavigate}
-                                    onShowToast={showToast}
-                                    onEditTrade={handleEditTrade}
-                                />
-                            )}
                             {activeTab === "analytics" && <Analytics />}
                             {activeTab === "settings" && (
                                 <Settings onShowToast={showToast} />

@@ -11,6 +11,7 @@ export interface Trade {
     profitLoss: number;
     commission: number;
     strategy: string;
+    confirmation?: string;
     timeframe: string;
     session: string;
     setupQuality: 1 | 2 | 3 | 4 | 5;

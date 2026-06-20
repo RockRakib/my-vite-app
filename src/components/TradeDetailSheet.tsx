@@ -1,3 +1,4 @@
+import React, { useState, useRef } from "react";
 import type { Trade } from "../types";
 import BottomSheet from "./BottomSheet";
 import { Star, Pencil, Trash2 } from "lucide-react";
@@ -19,7 +20,13 @@ export default function TradeDetailSheet({
 }: TradeDetailSheetProps) {
     if (!trade) return null;
 
-    const isWin = trade.profitLoss > 0;
+    const [fullscreenSrc, setFullscreenSrc] = useState<string | null>(null);
+    const [scale, setScale] = useState(1);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const [isPanning, setIsPanning] = useState(false);
+    const startPanRef = useRef({ x: 0, y: 0 });
+    const startOffsetRef = useRef({ x: 0, y: 0 });
+
     const dateStr = new Date(trade.timestamp).toLocaleDateString("en-US", {
         weekday: "long",
         month: "long",
@@ -50,7 +57,7 @@ export default function TradeDetailSheet({
             onClose={onClose}
             title={`${trade.pair} ${trade.direction.toUpperCase()}`}
         >
-            {/* P&L Header */}
+            {/* Header */}
             <div
                 className="flex items-center justify-between py-4"
                 style={{ borderBottom: "1px solid rgba(255, 255, 255, 0.06)" }}
@@ -58,17 +65,6 @@ export default function TradeDetailSheet({
                 <div>
                     <div style={{ fontSize: 11, color: "#4A5568" }}>
                         {dateStr} · {timeStr}
-                    </div>
-                    <div
-                        className="font-mono"
-                        style={{
-                            fontSize: 28,
-                            fontWeight: 700,
-                            color: isWin ? "#10B981" : "#EF4444",
-                            marginTop: 4,
-                        }}
-                    >
-                        {isWin ? "+" : ""}${trade.profitLoss}
                     </div>
                 </div>
                 <div
@@ -301,10 +297,117 @@ export default function TradeDetailSheet({
                                     objectFit: "cover",
                                     borderRadius: 10,
                                     flexShrink: 0,
+                                    cursor: "pointer",
+                                }}
+                                onClick={() => {
+                                    setFullscreenSrc(s);
+                                    setScale(1);
+                                    setOffset({ x: 0, y: 0 });
                                 }}
                             />
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* Fullscreen viewer with smooth draggable zoom */}
+            {fullscreenSrc && (
+                <div
+                    onClick={() => {
+                        // if zoomed (scale>1) reset zoom first, else close
+                        if (scale > 1) {
+                            setScale(1);
+                            setOffset({ x: 0, y: 0 });
+                        } else {
+                            setFullscreenSrc(null);
+                            setScale(1);
+                            setOffset({ x: 0, y: 0 });
+                        }
+                    }}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        background: "rgba(0,0,0,0.9)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 9999,
+                    }}
+                >
+                    <img
+                        src={fullscreenSrc}
+                        alt="fullscreen"
+                        onClick={(e) => {
+                            e.stopPropagation(); /* prevent outer close */
+                        }}
+                        onWheel={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            const delta = -e.deltaY;
+                            const Z = delta > 0 ? 1.12 : 0.88;
+                            setScale((s) => {
+                                const next = Math.max(
+                                    1,
+                                    Math.min(4, +(s * Z).toFixed(3)),
+                                );
+                                // if resetting to 1 also reset offset
+                                if (next === 1) setOffset({ x: 0, y: 0 });
+                                return next;
+                            });
+                        }}
+                        onPointerDown={(e) => {
+                            e.stopPropagation();
+                            const p = e as React.PointerEvent<HTMLImageElement>;
+                            (p.target as Element).setPointerCapture(
+                                p.pointerId,
+                            );
+                            setIsPanning(true);
+                            startPanRef.current = {
+                                x: p.clientX,
+                                y: p.clientY,
+                            };
+                            startOffsetRef.current = { ...offset };
+                        }}
+                        onPointerMove={(e) => {
+                            const p = e as React.PointerEvent<HTMLImageElement>;
+                            if (!isPanning) return;
+                            const dx = p.clientX - startPanRef.current.x;
+                            const dy = p.clientY - startPanRef.current.y;
+                            setOffset({
+                                x: startOffsetRef.current.x + dx,
+                                y: startOffsetRef.current.y + dy,
+                            });
+                        }}
+                        onPointerUp={(e) => {
+                            const p = e as React.PointerEvent<HTMLImageElement>;
+                            try {
+                                (p.target as Element).releasePointerCapture(
+                                    p.pointerId,
+                                );
+                            } catch {}
+                            setIsPanning(false);
+                        }}
+                        onPointerCancel={() => setIsPanning(false)}
+                        style={{
+                            width: "auto",
+                            height: "auto",
+                            transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+                            transition: isPanning
+                                ? "none"
+                                : "transform 0.18s ease",
+                            cursor: isPanning
+                                ? "grabbing"
+                                : scale > 1
+                                  ? "grab"
+                                  : "zoom-in",
+                            userSelect: "none",
+                            touchAction: "none",
+                            borderRadius: 8,
+                            boxShadow: "0 8px 30px rgba(0,0,0,0.6)",
+                            maxWidth: "95%",
+                            maxHeight: "95%",
+                        }}
+                    />
                 </div>
             )}
 

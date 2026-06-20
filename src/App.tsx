@@ -99,6 +99,7 @@ export default function App() {
                                     onShowToast={showToast}
                                     initialTrade={editingTrade}
                                     onSaved={() => setEditingTrade(null)}
+                                    onNavigate={handleNavigate}
                                 />
                             )}
                             {activeTab === "journal" && (

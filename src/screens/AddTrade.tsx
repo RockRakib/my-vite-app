@@ -9,12 +9,14 @@ interface AddTradeProps {
     onShowToast: (message: string, type: "success" | "error" | "info") => void;
     initialTrade?: Trade | null;
     onSaved?: (trade: Trade) => void;
+    onNavigate?: (tab: string) => void;
 }
 
 export default function AddTrade({
     onShowToast,
     initialTrade = null,
     onSaved,
+    onNavigate,
 }: AddTradeProps) {
     const settings = getSettings();
     const STRATEGY_OPTIONS = [
@@ -45,9 +47,6 @@ export default function AddTrade({
     const [takeProfit, setTakeProfit] = useState(
         initialTrade?.takeProfit ? String(initialTrade.takeProfit) : "",
     );
-    const [lots, setLots] = useState(
-        initialTrade?.lots ? String(initialTrade.lots) : "0.1",
-    );
     const [strategy, setStrategy] = useState(initialTrade?.strategy ?? "");
     const [timeframe, setTimeframe] = useState(initialTrade?.timeframe ?? "H1");
     const [session, setSession] = useState(initialTrade?.session ?? "London");
@@ -72,15 +71,13 @@ export default function AddTrade({
     const [showExitTypeDropdown, setShowExitTypeDropdown] = useState(false);
 
     const estimatedPnL = useCallback(() => {
-        if (!entryPrice || !exitPrice || !lots) return null;
+        if (!entryPrice || !exitPrice) return null;
         const entry = parseFloat(entryPrice);
         const exit = parseFloat(exitPrice);
-        const size = parseFloat(lots);
-        if (isNaN(entry) || isNaN(exit) || isNaN(size)) return null;
+        if (isNaN(entry) || isNaN(exit)) return null;
         const diff = direction === "buy" ? exit - entry : entry - exit;
-        // Approximate: 1 lot = $10/pip for forex
-        return Math.round(diff * 100000 * size * 10);
-    }, [entryPrice, exitPrice, lots, direction]);
+        return Math.round(diff * 100000 * 10);
+    }, [entryPrice, exitPrice, direction]);
 
     const handleScreenshotUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -139,7 +136,6 @@ export default function AddTrade({
             exitPrice: exit,
             stopLoss: parseFloat(stopLoss) || 0,
             takeProfit: parseFloat(takeProfit) || 0,
-            lots: parseFloat(lots) || 0.1,
             pips:
                 direction === "buy"
                     ? exit > entry
@@ -177,6 +173,7 @@ export default function AddTrade({
         }
 
         onSaved?.(trade);
+        onNavigate?.("journal");
 
         // Reset form
         setPair("");
@@ -184,7 +181,6 @@ export default function AddTrade({
         setExitPrice("");
         setStopLoss("");
         setTakeProfit("");
-        setLots("0.1");
         setStrategy("");
         setSetupQuality(3);
         setEmotions([]);
@@ -400,58 +396,6 @@ export default function AddTrade({
                         placeholder="1.07550"
                         style={inputStyle}
                     />
-                </div>
-            </div>
-
-            {/* Lots */}
-            <div style={{ marginBottom: 16 }}>
-                <label style={labelStyle}>Position Size (Lots)</label>
-                <div className="flex items-center gap-2">
-                    <button
-                        style={{
-                            width: 40,
-                            height: 48,
-                            borderRadius: 10,
-                            background: "rgba(255, 255, 255, 0.04)",
-                            color: "#8B95A5",
-                            fontSize: 18,
-                        }}
-                        onClick={() =>
-                            setLots((prev) =>
-                                Math.max(0.01, parseFloat(prev) - 0.01).toFixed(
-                                    2,
-                                ),
-                            )
-                        }
-                    >
-                        −
-                    </button>
-                    <input
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        value={lots}
-                        onChange={(e) => setLots(e.target.value)}
-                        className="font-mono"
-                        style={{ ...inputStyle, textAlign: "center", flex: 1 }}
-                    />
-                    <button
-                        style={{
-                            width: 40,
-                            height: 48,
-                            borderRadius: 10,
-                            background: "rgba(255, 255, 255, 0.04)",
-                            color: "#8B95A5",
-                            fontSize: 18,
-                        }}
-                        onClick={() =>
-                            setLots((prev) =>
-                                (parseFloat(prev) + 0.01).toFixed(2),
-                            )
-                        }
-                    >
-                        +
-                    </button>
                 </div>
             </div>
 

@@ -2,7 +2,13 @@ import { useState, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Camera, Star, ChevronDown } from "lucide-react";
 import type { Trade } from "../types";
-import { addTrade, getSettings, haptic, updateTrade } from "../db";
+import {
+    addTrade,
+    getSettings,
+    getCustomFields,
+    haptic,
+    updateTrade,
+} from "../db";
 import { v4 as uuidv4 } from "uuid";
 
 interface AddTradeProps {
@@ -70,11 +76,26 @@ export default function AddTrade({
     const [exitType, setExitType] = useState<"tp" | "sl" | "be" | "manual">(
         (initialTrade?.exitType as "tp" | "sl" | "be" | "manual") ?? "manual",
     );
+    const [customValues, setCustomValues] = useState<
+        Record<string, string | number | boolean | string[]>
+    >(initialTrade?.customValues ?? {});
     const [showStrategyDropdown, setShowStrategyDropdown] = useState(false);
     const [showConfirmationDropdown, setShowConfirmationDropdown] =
         useState(false);
+    const [showTimeframeDropdown, setShowTimeframeDropdown] = useState(false);
     const [showSessionDropdown, setShowSessionDropdown] = useState(false);
     const [showExitTypeDropdown, setShowExitTypeDropdown] = useState(false);
+
+    const customFields = getCustomFields()
+        .filter((field) => field.enabled)
+        .sort((a, b) => a.order - b.order);
+
+    const setCustomFieldValue = (
+        key: string,
+        value: string | number | boolean | string[],
+    ) => {
+        setCustomValues((prev) => ({ ...prev, [key]: value }));
+    };
 
     const estimatedPnL = useCallback(() => {
         if (!entryPrice || !exitPrice) return null;
@@ -133,6 +154,16 @@ export default function AddTrade({
         const exit = parseFloat(exitPrice);
         const pips = Math.round(Math.abs(exit - entry) * 10000);
 
+        const enabledCustomFieldKeys = customFields.map((field) => field.key);
+        const filteredCustomValues = Object.entries(customValues).reduce<
+            Record<string, string | number | boolean | string[]>
+        >((acc, [key, value]) => {
+            if (enabledCustomFieldKeys.includes(key)) {
+                acc[key] = value;
+            }
+            return acc;
+        }, {});
+
         const trade: Trade = {
             id: initialTrade?.id ?? uuidv4(),
             timestamp: initialTrade?.timestamp ?? Date.now(),
@@ -163,6 +194,7 @@ export default function AddTrade({
             screenshots,
             notes,
             exitType,
+            customValues: filteredCustomValues,
         };
 
         if (initialTrade) {
@@ -190,11 +222,14 @@ export default function AddTrade({
         setTakeProfit("");
         setStrategy("");
         setConfirmation("");
+        setTimeframe("H1");
+        setSession("London");
         setSetupQuality(3);
         setEmotions([]);
         setMistakes([]);
         setScreenshots([]);
         setNotes("");
+        setCustomValues({});
         // If editing, reset initial fields handled by parent via onSaved
     };
 
@@ -528,38 +563,66 @@ export default function AddTrade({
             </div>
 
             {/* Timeframe */}
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 16, position: "relative" }}>
                 <label style={labelStyle}>Timeframe</label>
-                <div className="flex flex-wrap gap-1.5">
-                    {settings.timeframes.map((tf) => (
-                        <button
-                            key={tf}
-                            style={{
-                                height: 36,
-                                padding: "0 14px",
-                                borderRadius: 8,
-                                fontSize: 13,
-                                fontFamily: "'JetBrains Mono', monospace",
-                                background:
-                                    timeframe === tf
-                                        ? "rgba(45, 212, 168, 0.12)"
-                                        : "rgba(255, 255, 255, 0.04)",
-                                color: timeframe === tf ? "#2DD4A8" : "#8B95A5",
-                                border:
-                                    timeframe === tf
-                                        ? "1px solid rgba(45, 212, 168, 0.25)"
-                                        : "1px solid transparent",
-                                transition: "all 0.2s ease",
-                            }}
-                            onClick={() => {
-                                haptic();
-                                setTimeframe(tf);
-                            }}
-                        >
-                            {tf}
-                        </button>
-                    ))}
-                </div>
+                <button
+                    className="flex items-center justify-between"
+                    style={{ ...inputStyle, textAlign: "left" }}
+                    onClick={() =>
+                        setShowTimeframeDropdown(!showTimeframeDropdown)
+                    }
+                >
+                    <span
+                        style={{
+                            color: timeframe ? "#F0F2F5" : "#4A5568",
+                        }}
+                    >
+                        {timeframe || "Select timeframe..."}
+                    </span>
+                    <ChevronDown size={16} color="#4A5568" />
+                </button>
+                {showTimeframeDropdown && (
+                    <div
+                        className="absolute left-0 right-0 z-10"
+                        style={{
+                            top: "calc(100% + 4px)",
+                            background: "rgba(30, 36, 42, 0.95)",
+                            backdropFilter: "blur(20px)",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderRadius: 10,
+                            maxHeight: 200,
+                            overflow: "auto",
+                        }}
+                    >
+                        {settings.timeframes.map((tf) => (
+                            <button
+                                key={tf}
+                                className="w-full text-left"
+                                style={{
+                                    padding: "12px 14px",
+                                    fontSize: 14,
+                                    color:
+                                        timeframe === tf
+                                            ? "#2DD4A8"
+                                            : "#F0F2F5",
+                                    background:
+                                        timeframe === tf
+                                            ? "rgba(45, 212, 168, 0.08)"
+                                            : "transparent",
+                                    borderBottom:
+                                        "1px solid rgba(255, 255, 255, 0.03)",
+                                }}
+                                onClick={() => {
+                                    haptic();
+                                    setTimeframe(tf);
+                                    setShowTimeframeDropdown(false);
+                                }}
+                            >
+                                {tf}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Session */}
@@ -711,6 +774,192 @@ export default function AddTrade({
                     })}
                 </div>
             </div>
+
+            {/* Custom Fields */}
+            {customFields.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                    {/* <label style={labelStyle}>Custom Fields</label> */}
+                    <div className="flex flex-col gap-3">
+                        {customFields.map((field) => {
+                            const value = customValues[field.key];
+
+                            if (field.type === "checkbox") {
+                                return (
+                                    <label
+                                        key={field.id}
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "space-between",
+                                            gap: 12,
+                                            background:
+                                                "rgba(255, 255, 255, 0.04)",
+                                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                                            borderRadius: 10,
+                                            padding: "12px 14px",
+                                        }}
+                                    >
+                                        <span
+                                            style={{
+                                                color: "#F0F2F5",
+                                                fontSize: 14,
+                                            }}
+                                        >
+                                            {field.name}
+                                        </span>
+                                        <input
+                                            type="checkbox"
+                                            checked={Boolean(value)}
+                                            onChange={(e) =>
+                                                setCustomFieldValue(
+                                                    field.key,
+                                                    e.target.checked,
+                                                )
+                                            }
+                                            style={{ width: 18, height: 18 }}
+                                        />
+                                    </label>
+                                );
+                            }
+
+                            if (field.type === "select") {
+                                return (
+                                    <div key={field.id}>
+                                        <label style={labelStyle}>
+                                            {field.name}
+                                        </label>
+                                        <select
+                                            value={
+                                                typeof value === "string"
+                                                    ? value
+                                                    : ""
+                                            }
+                                            onChange={(e) =>
+                                                setCustomFieldValue(
+                                                    field.key,
+                                                    e.target.value,
+                                                )
+                                            }
+                                            style={inputStyle}
+                                        >
+                                            <option value="">
+                                                Select{" "}
+                                                {field.name.toLowerCase()}...
+                                            </option>
+                                            {field.options?.map((option) => (
+                                                <option
+                                                    key={option}
+                                                    value={option}
+                                                >
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                );
+                            }
+
+                            if (field.type === "multiselect") {
+                                const selectedValues = Array.isArray(value)
+                                    ? value
+                                    : [];
+                                return (
+                                    <div key={field.id}>
+                                        <label style={labelStyle}>
+                                            {field.name}
+                                        </label>
+                                        <div className="flex flex-wrap gap-2">
+                                            {field.options?.map((option) => {
+                                                const selected =
+                                                    selectedValues.includes(
+                                                        option,
+                                                    );
+                                                return (
+                                                    <button
+                                                        key={option}
+                                                        type="button"
+                                                        style={{
+                                                            height: 32,
+                                                            padding: "0 12px",
+                                                            borderRadius: 16,
+                                                            fontSize: 12,
+                                                            background: selected
+                                                                ? "rgba(45, 212, 168, 0.12)"
+                                                                : "rgba(255, 255, 255, 0.04)",
+                                                            color: selected
+                                                                ? "#2DD4A8"
+                                                                : "#8B95A5",
+                                                            border: selected
+                                                                ? "1px solid rgba(45, 212, 168, 0.25)"
+                                                                : "1px solid transparent",
+                                                            transition:
+                                                                "all 0.2s ease",
+                                                        }}
+                                                        onClick={() => {
+                                                            const next =
+                                                                selected
+                                                                    ? selectedValues.filter(
+                                                                          (
+                                                                              item,
+                                                                          ) =>
+                                                                              item !==
+                                                                              option,
+                                                                      )
+                                                                    : [
+                                                                          ...selectedValues,
+                                                                          option,
+                                                                      ];
+                                                            setCustomFieldValue(
+                                                                field.key,
+                                                                next,
+                                                            );
+                                                        }}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            return (
+                                <div key={field.id}>
+                                    <label style={labelStyle}>
+                                        {field.name}
+                                    </label>
+                                    <input
+                                        type={
+                                            field.type === "number"
+                                                ? "number"
+                                                : field.type === "date"
+                                                  ? "date"
+                                                  : "text"
+                                        }
+                                        value={
+                                            typeof value === "string" ||
+                                            typeof value === "number"
+                                                ? value
+                                                : ""
+                                        }
+                                        onChange={(e) =>
+                                            setCustomFieldValue(
+                                                field.key,
+                                                field.type === "number"
+                                                    ? Number(e.target.value)
+                                                    : e.target.value,
+                                            )
+                                        }
+                                        placeholder={field.name}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* Exit Type */}
             <div style={{ marginBottom: 16, position: "relative" }}>

@@ -21,6 +21,7 @@ export interface Trade {
     screenshots: string[];
     notes: string;
     exitType: "tp" | "sl" | "be" | "manual";
+    customValues?: Record<string, string | number | boolean | string[]>;
 }
 
 export interface CustomField {

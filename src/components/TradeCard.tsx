@@ -175,6 +175,30 @@ export default function TradeCard({ trade, onTap, compact = false }: Props) {
                 </div>
             </div>
 
+            {/* Win/Lose badge */}
+            <div
+                style={{
+                    minWidth: 40,
+                    padding: "4px 10px",
+                    borderRadius: 999,
+                    background: isWin
+                        ? "rgba(16, 185, 129, 0.12)"
+                        : "rgba(239, 68, 68, 0.12)",
+                    border: isWin
+                        ? "1px solid rgba(16, 185, 129, 0.20)"
+                        : "1px solid rgba(239, 68, 68, 0.20)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: isWin ? "#10B981" : "#EF4444",
+                    fontWeight: 700,
+                    fontSize: 10,
+                    flexShrink: 0,
+                }}
+            >
+                {isWin ? "W" : "L"}
+            </div>
+
             {/* Right - Screenshot */}
             {trade.screenshots && trade.screenshots.length > 0 ? (
                 <div

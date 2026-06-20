@@ -386,7 +386,7 @@ export default function AddTrade({
 
             {/* Entry & Exit */}
             <div
-                className="grid grid-cols-2 gap-3"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                 style={{ marginBottom: 16 }}
             >
                 <div>
@@ -415,7 +415,7 @@ export default function AddTrade({
 
             {/* SL & TP */}
             <div
-                className="grid grid-cols-2 gap-3"
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                 style={{ marginBottom: 16 }}
             >
                 <div>
@@ -1024,29 +1024,37 @@ export default function AddTrade({
                     Screenshots ({screenshots.length}/5)
                 </label>
                 <input
+                    id="screenshot-upload"
                     type="file"
                     ref={fileInputRef}
                     accept="image/*"
                     multiple
-                    className="hidden"
                     onChange={handleScreenshotUpload}
+                    style={{
+                        position: "absolute",
+                        opacity: 0,
+                        width: 1,
+                        height: 1,
+                        left: -9999,
+                    }}
                 />
                 {screenshots.length === 0 ? (
-                    <button
+                    <label
+                        htmlFor="screenshot-upload"
                         className="flex flex-col items-center justify-center w-full gap-2"
                         style={{
                             height: 120,
                             border: "2px dashed rgba(255, 255, 255, 0.10)",
                             borderRadius: 12,
                             color: "#4A5568",
+                            cursor: "pointer",
                         }}
-                        onClick={() => fileInputRef.current?.click()}
                     >
                         <Camera size={32} />
                         <span style={{ fontSize: 13 }}>
                             Tap to add screenshots
                         </span>
-                    </button>
+                    </label>
                 ) : (
                     <div className="flex gap-2 pb-2 overflow-x-auto">
                         {screenshots.map((s, i) => (
@@ -1079,6 +1087,7 @@ export default function AddTrade({
                         ))}
                         {screenshots.length < 5 && (
                             <button
+                                type="button"
                                 className="flex items-center justify-center flex-shrink-0"
                                 style={{
                                     width: 64,
